@@ -1,55 +1,9 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
+#include <time.h>
 #include <mpi.h>
-
-int* read_array_from_file(const char* filename, int* out_size) {
-    FILE* file = fopen(filename, "r");
-    if (file == NULL) {
-        perror("Failed to open file");
-        return NULL;
-    }
-
-    int count = 0;
-    int temp;
-    while (fscanf(file, "%d", &temp) == 1) {
-        count++;
-    }
-
-    if (count == 0) {
-        fclose(file);
-        return NULL;
-    }
-
-    rewind(file);
-    int* array = (int*)malloc(count * sizeof(int));
-    if (array == NULL) {
-        fclose(file);
-        perror("Memory allocation failed");
-        return NULL;
-    }
-
-    for (int i = 0; i < count; i++) {
-        if (fscanf(file, "%d", &array[i]) != 1) {
-            free(array);
-            fclose(file);
-            return NULL;
-        }
-    }
-
-    fclose(file);
-    *out_size = count;
-    return array;
-}
-
-void is_sorted(const int* arr, int size) {
-    for (int i = 0; i < size - 1; i++) {
-        if (arr[i] > arr[i + 1]) {
-            printf("Массив не отсортирован\n");
-            return;
-        }
-    }
-    printf("Массив отсортирован\n");
-}
+#include "utils.h"
 
 int compare_asc(const void *a, const void *b) { return (*(int*)a - *(int*)b); }
 int compare_desc(const void *a, const void *b) { return (*(int*)b - *(int*)a); }
@@ -99,13 +53,16 @@ int main(int argc, char **argv) {
 
     int N = 0;
     int *global_data = NULL;
+    double start = 0.0;
 
     if (rank == 0) {
         global_data = read_array_from_file("input.txt", &N);
         if (!global_data) {
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
+        printf("Размер массива: %d\n", N);
         is_sorted(global_data, N);
+        start = MPI_Wtime();
     }
 
     // Рассылаем размер массива всем процессам
@@ -146,7 +103,9 @@ int main(int argc, char **argv) {
               0, MPI_COMM_WORLD);
 
     if (rank == 0) {
+        double end = MPI_Wtime();
         is_sorted(global_data, N);
+        printf("Время исполнения: %.0f мс\n", 1000*(end - start));
         free(global_data);
     }
 
