@@ -1,0 +1,3 @@
+make
+./usual
+./plot.py
