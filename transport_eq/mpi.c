@@ -37,20 +37,18 @@ int main(int argc, char** argv) {
     std::vector<double> u_current(local_n + 2, 0.0); 
     std::vector<double> u_next(local_n + 2, 0.0);
 
-    // Расчет смещения для текущего процесса
     int offset = 0;
     for (int r = 0; r < rank; ++r) {
         offset += (r < remainder) ? (N / numprocs + 1) : (N / numprocs);
     }
 
-    // Инициализация начального условия
     for (int i = 1; i <= local_n; ++i) {
         double x = x_left + (offset + i - 1) * dx;
         u_current[i] = rectangle(x, a, b);
     }
 
     double t_cur = t_start;
-    double start_time = MPI_Wtime(); // Запуск таймера
+    double start_time = MPI_Wtime();
     while (t_cur < t_end) {
         // Обмен ghost cells
         if (numprocs > 1) {
@@ -68,14 +66,12 @@ int main(int argc, char** argv) {
             }
         }
 
-        // Вычисление следующего шага (схема Лакса–Вендроффа)
         for (int i = 1; i <= local_n; ++i) {
             double term1 = (u_current[i+1] - u_current[i-1]) * ((dt)/(2*dx));
             double term2 = (u_current[i+1] - 2*u_current[i] + u_current[i-1]) * 0.5 * ((dt * dt) / (dx * dx));
             u_next[i] = u_current[i] - term1 + term2;
         }
 
-        // Обновление текущего состояния
         for (int i = 0; i <= local_n + 1; ++i) {
             u_current[i] = u_next[i];
         }
@@ -85,11 +81,9 @@ int main(int argc, char** argv) {
     std::vector<double> global_u(N);
     double end_time;
     if (rank == 0) {
-        // Копирование данных из главного процесса
         for (int i = 1; i <= local_n; ++i) {
             global_u[offset + i - 1] = u_current[i];
         }
-        // Получение данных от других процессов
         for (int r = 1; r < numprocs; ++r) {
             int r_local_n = (r < remainder) ? (N / numprocs + 1) : (N / numprocs);
             std::vector<double> r_data(r_local_n);
@@ -105,7 +99,6 @@ int main(int argc, char** argv) {
         
         end_time = MPI_Wtime();
     } else {
-        // Отправка данных в главный процесс
         std::vector<double> send_data(local_n);
         for (int i = 1; i <= local_n; ++i) {
             send_data[i-1] = u_current[i];
