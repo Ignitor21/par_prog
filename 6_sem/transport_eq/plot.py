@@ -8,7 +8,7 @@ def parse_file(filename):
         data = file.read().split()
     return np.array(data, dtype=float)
 
-u = parse_file('u.txt')
+u = parse_file('u_usual.txt')
 x = parse_file('x.txt')
 
 if len(u) != len(x):

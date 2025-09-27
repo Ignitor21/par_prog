@@ -89,16 +89,13 @@ void print_array(int* arr, int size) {
 }
 
 void parallel_merge(int *arr, int num_chunks, int *chunk_sizes, int *displs) {
-    // Создаем временный буфер для слияния
     int total_size = displs[num_chunks-1] + chunk_sizes[num_chunks-1];
     int *temp = (int *)malloc(total_size * sizeof(int));
     
-    // Копируем исходные данные
     for (int i = 0; i < total_size; i++) {
         temp[i] = arr[i];
     }
 
-    // Многофазное слияние
     int active_chunks = num_chunks;
     while (active_chunks > 1) {
         int new_chunks = 0;
@@ -107,14 +104,12 @@ void parallel_merge(int *arr, int num_chunks, int *chunk_sizes, int *displs) {
         
         for (int i = 0; i < active_chunks; i += 2) {
             if (i+1 >= active_chunks) {
-                // Нечетное количество - копируем последний чанк
                 new_displs[new_chunks] = displs[i];
                 new_sizes[new_chunks] = chunk_sizes[i];
                 new_chunks++;
                 continue;
             }
 
-            // Сливаем два соседних чанка
             int left_start = displs[i];
             int left_end = left_start + chunk_sizes[i];
             int right_start = displs[i+1];
@@ -131,19 +126,16 @@ void parallel_merge(int *arr, int num_chunks, int *chunk_sizes, int *displs) {
             while (l < left_end) arr[k++] = temp[l++];
             while (r < right_end) arr[k++] = temp[r++];
             
-            // Обновляем информацию о чанках
             new_displs[new_chunks] = displs[i];
             new_sizes[new_chunks] = chunk_sizes[i] + chunk_sizes[i+1];
             new_chunks++;
         }
         
-        // Обновляем displs и chunk_sizes для следующей итерации
         for (int i = 0; i < new_chunks; i++) {
             displs[i] = new_displs[i];
             chunk_sizes[i] = new_sizes[i];
         }
         
-        // Копируем обратно в temp для следующей итерации
         for (int i = 0; i < total_size; i++) {
             temp[i] = arr[i];
         }
@@ -167,7 +159,16 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
     if (rank == 0) {
-        global_size = readArrayFromFile("input.txt", &global_arr);
+
+        if (argc < 2) {
+            printf("Ошибка: не указано имя файла\n");
+            printf("Использование: %s <имя_файла>\n", argv[0]);
+            return 1;
+        }
+
+        char* filename = argv[1];
+
+        global_size = readArrayFromFile(filename, &global_arr);
         if (global_size <= 0) {
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
@@ -176,7 +177,6 @@ int main(int argc, char **argv) {
 
     MPI_Bcast(&global_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // Распределяем данные
     int *sendcounts = (int *)malloc(world_size * sizeof(int));
     int *displs = (int *)malloc(world_size * sizeof(int));
     
@@ -194,10 +194,8 @@ int main(int argc, char **argv) {
     MPI_Scatterv(global_arr, sendcounts, displs, MPI_INT,
                 local_arr, local_size, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // Локальная сортировка
     mergeSort(local_arr, 0, local_size - 1);
 
-    // Сбор результатов
     int *sorted_global = NULL;
     if (rank == 0) {
         sorted_global = (int *)malloc(global_size * sizeof(int));
@@ -206,19 +204,16 @@ int main(int argc, char **argv) {
     MPI_Gatherv(local_arr, local_size, MPI_INT,
                sorted_global, sendcounts, displs, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // Финальное слияние
     if (rank == 0) {
         parallel_merge(sorted_global, world_size, sendcounts, displs);
         
         end = MPI_Wtime();
         verify_solution(sorted_global, global_size);
-        //print_array(sorted_global, global_size);
-        printf("Время работы: %.6f секунд\n", end - start);
+        printf("Время выполнения: %.6f с\n", 3*(end - start));
         
         free(sorted_global);
     }
 
-    // Освобождение памяти
     free(local_arr);
     free(sendcounts);
     free(displs);

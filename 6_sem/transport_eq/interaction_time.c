@@ -4,7 +4,7 @@
 
 #define TIMER 0
 #define UNO_REVERSE 1
-#define IT_NUM 10
+#define IT_NUM 100000
 #define TAG 0
 
 int main(int argc, char *argv[]) {

@@ -52,7 +52,7 @@ int main()
 
     printf("Время выполнения: %.6f с\n", time_spent);
 
-    write_vec_to_file("u.txt", u_vec);
-    write_vec_to_file("x.txt", x_vec);
+    write_vec_to_file("u_usual.txt", u_vec);
+    write_vec_to_file("x_usual.txt", x_vec);
     return 0;
 }

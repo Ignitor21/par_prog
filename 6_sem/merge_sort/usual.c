@@ -2,22 +2,18 @@
 #include <stdlib.h>
 #include <time.h>
 
-// Функция для слияния двух подмассивов
 void merge(int arr[], int left, int mid, int right) {
     int n1 = mid - left + 1;
     int n2 = right - mid;
 
-    // Создаем временные подмассивы
     int *L = (int *)malloc(n1 * sizeof(int));
     int *R = (int *)malloc(n2 * sizeof(int));
 
-    // Копируем данные во временные массивы
     for (int i = 0; i < n1; i++)
         L[i] = arr[left + i];
     for (int j = 0; j < n2; j++)
         R[j] = arr[mid + 1 + j];
 
-    // Слияние временных массивов обратно в arr[left..right]
     int i = 0, j = 0, k = left;
     while (i < n1 && j < n2) {
         if (L[i] <= R[j]) {
@@ -30,14 +26,12 @@ void merge(int arr[], int left, int mid, int right) {
         k++;
     }
 
-    // Копируем оставшиеся элементы L[], если они есть
     while (i < n1) {
         arr[k] = L[i];
         i++;
         k++;
     }
 
-    // Копируем оставшиеся элементы R[], если они есть
     while (j < n2) {
         arr[k] = R[j];
         j++;
@@ -56,11 +50,10 @@ void verify_solution(int* arr, int size)
             return;
         }
     }
-    printf("Массив отсортирован\n");  // Найдены два элемента в неправильном порядке
+    printf("Массив отсортирован\n");
     return;
 }
 
-// Рекурсивная функция сортировки слиянием
 void mergeSort(int arr[], int left, int right) {
     if (left < right) {
         int mid = left + (right - left) / 2;
@@ -72,7 +65,6 @@ void mergeSort(int arr[], int left, int right) {
     }
 }
 
-// Функция для чтения массива из файла
 int readArrayFromFile(const char *filename, int **arr) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
@@ -102,31 +94,32 @@ int readArrayFromFile(const char *filename, int **arr) {
     return count;
 }
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        printf("Ошибка: не указано имя файла\n");
+        printf("Использование: %s <имя_файла>\n", argv[0]);
+        return 1;
+    }
+
+    char* filename = argv[1];
     int *arr = NULL;
     int size;
 
-    // Чтение массива из файла
-    size = readArrayFromFile("input.txt", &arr);
+    size = readArrayFromFile(filename, &arr);
     if (size <= 0) {
         return 1;
     }
 
-    // Замер времени начала сортировки
     clock_t start = clock();
 
-    // Сортировка слиянием
     mergeSort(arr, 0, size - 1);
 
-    // Замер времени окончания сортировки
     clock_t end = clock();
     double time_spent = (double)(end - start) / CLOCKS_PER_SEC;
 
-    // Освобождение памяти
     verify_solution(arr, size); 
+    printf("Время выполнения: %.6f с\n", time_spent);
     free(arr);
-    // Вывод времени работы
-    printf("Время выполнения сортировки: %.6f секунд\n", time_spent);
 
     return 0;
 }

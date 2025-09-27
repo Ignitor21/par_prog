@@ -1,0 +1,1 @@
+g++ -Wall -O2 -DNDEBUG CMakeFiles/evaluator.dir/src/main.cpp.o CMakeFiles/evaluator.dir/src/integral_evaluator.cpp.o -o evaluator  -lpthread 

@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
     double t_cur = t_start;
     double start_time = MPI_Wtime();
     while (t_cur < t_end) {
-        // Обмен ghost cells
+        // Обмен краевыми значениями
         if (numprocs > 1) {
             // Обмен с левым соседом
             if (rank > 0) {
